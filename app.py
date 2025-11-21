@@ -1,20 +1,16 @@
-# ==============================================================================
-# NIFTY 500 STOCK SCREENER - BACKEND (app.py)
-# Final, Definitive, and Correct Version for Production Deployment
-# ==============================================================================
-
 import os
-from flask import Flask, jsonify, send_from_directory, request
+from flask import Flask, jsonify, send_from_directory
+# ... (rest of your imports)
 from flask_cors import CORS
 from flask_caching import Cache
 import requests
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# This tells Flask where to find the built React app.
+# This tells Flask that the 'build' folder for the frontend is in the 'frontend' directory.
 app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 
-# --- (All configurations and the NIFTY_500_SYMBOLS list are unchanged) ---
+# --- (All your configurations and the NIFTY_500_SYMBOLS list are unchanged) ---
 NIFTY_500_SYMBOLS = [
     '360ONE', '3MINDIA', 'ABB', 'ACC', 'AARTIIND', 'AAVAS', 'ABBOTINDIA', 'ABCAPITAL', 'ABFRL', 'ADANIENT',
     'ADANIGREEN', 'ADANIPORTS', 'ADANIPOWER', 'ATGL', 'AWL', 'ABSLAMC', 'AEGISCHEM', 'AETHER',
@@ -70,7 +66,7 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 
-# --- API Routes (These are unchanged and will work perfectly) ---
+# --- API Routes ---
 @app.route("/api/nifty500-market-data", methods=['GET'])
 @cache.cached(timeout=600)
 def get_nifty500_market_data():
@@ -99,6 +95,7 @@ def get_nifty500_market_data():
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred during FMP bulk fetch: {e}"}), 500
 
+# ... (All other API routes are the same)
 @app.route("/api/stock-data/<symbol>", methods=['GET'])
 @cache.cached(timeout=300)
 def get_stock_data(symbol):
@@ -163,16 +160,13 @@ def get_stock_summary(symbol):
         return jsonify({"error": f"An error occurred during AI summary generation: {e}"}), 500
 
 
-# --- Catch-all route to serve the React app ---
-# This MUST come AFTER all your API routes.
+# --- Catch-all route ---
+# This is the most important part. It tells Flask to serve the React app's
+# main HTML file for any route that is not an API route.
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        # This is the key that serves the frontend.
-        return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory(app.static_folder, 'index.html')
 
 
 if __name__ == '__main__':
