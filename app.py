@@ -1,6 +1,6 @@
 # ==============================================================================
 # NIFTY 500 STOCK SCREENER - BACKEND (app.py)
-# Final, Definitive Version with Corrected Production Routing
+# Final, Definitive, and Correct Version for Production Deployment
 # ==============================================================================
 
 import os
@@ -11,8 +11,8 @@ import requests
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# The Flask app is now configured to serve static files from the 'frontend/build' directory.
-app = Flask(__name__, static_folder='frontend/build')
+# This tells Flask where to find the built React app.
+app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 
 # --- (All configurations and the NIFTY_500_SYMBOLS list are unchanged) ---
 NIFTY_500_SYMBOLS = [
@@ -70,16 +70,12 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 
-@app.errorhandler(500)
-def internal_error(error): return (jsonify({"error": "Internal Server Error", "message": str(error)}), 500)
-
-
+# --- API Routes (These are unchanged and will work perfectly) ---
 @app.route("/api/nifty500-market-data", methods=['GET'])
 @cache.cached(timeout=600)
 def get_nifty500_market_data():
     if not FMP_API_KEY:
         return jsonify({"error": "FMP_API_KEY is not configured."}), 500
-    print(f"Using hardcoded list of {len(NIFTY_500_SYMBOLS)} symbols to fetch FMP data.")
     fmp_symbols_string = ",".join([f"{symbol}.NS" for symbol in NIFTY_500_SYMBOLS])
     url = f"{FMP_BASE_URL}/quote/{fmp_symbols_string}?apikey={FMP_API_KEY}"
     try:
@@ -99,7 +95,6 @@ def get_nifty500_market_data():
                 "price": price, "change": round(change, 2), "percentChange": round(percent_change, 2),
                 "volume": stock_data.get("volume"), "marketCap": stock_data.get("marketCap"),
             })
-        print("Successfully processed bulk market data from FMP.")
         return jsonify(processed_data)
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred during FMP bulk fetch: {e}"}), 500
@@ -168,18 +163,16 @@ def get_stock_summary(symbol):
         return jsonify({"error": f"An error occurred during AI summary generation: {e}"}), 500
 
 
-# --- THE FINAL, DEFINITIVE SERVING LOGIC ---
-# This serves the static files (like CSS, JS, images) from React's build.
-@app.route('/static/<path:path>')
-def serve_static(path):
-    return send_from_directory(os.path.join(app.static_folder, 'static'), path)
-
-# This is the catch-all route that serves the main index.html file.
-# It allows React Router to handle all the page routing.
+# --- Catch-all route to serve the React app ---
+# This MUST come AFTER all your API routes.
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def serve_react_app(path):
-    return send_from_directory(app.static_folder, 'index.html')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        # This is the key that serves the frontend.
+        return send_from_directory(app.static_folder, 'index.html')
 
 
 if __name__ == '__main__':
