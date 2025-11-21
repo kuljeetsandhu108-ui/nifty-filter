@@ -1,17 +1,20 @@
+# ==============================================================================
+# NIFTY 500 STOCK SCREENER - BACKEND (app.py)
+# Final, Definitive Version with Corrected Production Routing
+# ==============================================================================
+
 import os
 from flask import Flask, jsonify, send_from_directory, request
-# ... (rest of imports)
 from flask_cors import CORS
 from flask_caching import Cache
 import requests
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# This is the key change. The path is now direct.
-app = Flask(__name__, static_folder='frontend/build', static_url_path='/')
+# The Flask app is now configured to serve static files from the 'frontend/build' directory.
+app = Flask(__name__, static_folder='frontend/build')
 
-# --- (The rest of the code is 100% IDENTICAL to the last complete version I gave you) ---
-# --- It includes the NIFTY_500_SYMBOLS list, all configurations, and all API endpoints ---
+# --- (All configurations and the NIFTY_500_SYMBOLS list are unchanged) ---
 NIFTY_500_SYMBOLS = [
     '360ONE', '3MINDIA', 'ABB', 'ACC', 'AARTIIND', 'AAVAS', 'ABBOTINDIA', 'ABCAPITAL', 'ABFRL', 'ADANIENT',
     'ADANIGREEN', 'ADANIPORTS', 'ADANIPOWER', 'ATGL', 'AWL', 'ABSLAMC', 'AEGISCHEM', 'AETHER',
@@ -165,14 +168,18 @@ def get_stock_summary(symbol):
         return jsonify({"error": f"An error occurred during AI summary generation: {e}"}), 500
 
 
-# --- Catch-all route to serve the React app ---
+# --- THE FINAL, DEFINITIVE SERVING LOGIC ---
+# This serves the static files (like CSS, JS, images) from React's build.
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory(os.path.join(app.static_folder, 'static'), path)
+
+# This is the catch-all route that serves the main index.html file.
+# It allows React Router to handle all the page routing.
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
+def serve_react_app(path):
+    return send_from_directory(app.static_folder, 'index.html')
 
 
 if __name__ == '__main__':
