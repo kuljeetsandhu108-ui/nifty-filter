@@ -1,0 +1,242 @@
+/* Nifty 500 Screener - App.css */
+
+/* --- Main App Container --- */
+.app-container {
+  text-align: center;
+  padding: 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* --- Header Styling --- */
+.app-header {
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 2.5rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: #ffffff;
+  /* A subtle gradient for a premium feel */
+  background-image: linear-gradient(90deg, #ececec, #a3a3a3);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.app-header p {
+  font-size: 1.25rem;
+  color: #a3a3a3;
+  margin: 0;
+}
+
+/* --- Main Content Area --- */
+.app-main {
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* --- Stock Table Styling --- */
+.stock-table {
+  background: rgba(23, 23, 23, 0.8); /* Semi-transparent dark background */
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  backdrop-filter: blur(10px); /* Frosted glass effect */
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.stock-table-header {
+  display: flex;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a3a3a3;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(40, 40, 40, 0.5);
+}
+
+.stock-table-row {
+  display: flex;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+/* Remove border from the last row */
+.stock-table-row:last-child {
+  border-bottom: none;
+}
+
+.stock-table-row:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: scale(1.01); /* Subtle hover effect */
+}
+
+/* --- Cell Styling --- */
+.stock-cell {
+  flex: 1;
+  text-align: left;
+}
+
+.stock-cell.symbol {
+  font-weight: 600;
+  color: #4ade80; /* A vibrant green for the symbol */
+}
+
+.stock-cell.name {
+  color: #e5e5e5;
+}
+
+
+/* --- Loading and Error State Styling --- */
+.loading-container, .error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-size: 1.5rem;
+  color: #a3a3a3;
+}
+
+/* Nifty 500 Screener - App.css (additions) */
+
+/* --- Filter Controls --- */
+.filter-controls {
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.search-bar {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.5rem; /* Left padding for the icon */
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  color: #e5e5e5;
+  background-color: rgba(23, 23, 23, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #4ade80; /* Highlight with our accent green on focus */
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.3);
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  transform: translateY(-50%);
+  color: #a3a3a3;
+}
+
+/* --- No Results Message --- */
+.no-results {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #a3a3a3;
+  font-size: 1.1rem;
+}
+
+/* --- ADD THESE STYLES to the end of frontend/src/App.css --- */
+
+/* Make filter controls responsive */
+.filter-controls {
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Filter Buttons Container */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.filter-button {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: transparent;
+  color: #a3a3a3;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.filter-button.active {
+  background-color: #4ade80;
+  color: #121212;
+  border-color: #4ade80;
+  font-weight: 600;
+}
+
+/* Updated Table Cell Layouts */
+.stock-table-header .stock-cell,
+.stock-table-row .stock-cell {
+  flex: 2; /* Default flex value */
+  text-align: right; /* Right-align numbers */
+}
+
+.stock-table-header .stock-cell.name,
+.stock-table-row .stock-cell.name {
+  flex: 4; /* Give more space to the company name */
+  text-align: left;
+}
+
+.stock-cell.name .symbol {
+  display: block;
+  font-weight: 600;
+  color: #4ade80;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.stock-cell .price {
+  font-weight: 500;
+}
+
+.stock-cell.change {
+  font-weight: 500;
+}
+
+/* Dynamic coloring for price change */
+.stock-cell.change.positive {
+  color: #4ade80; /* Green for gainers */
+}
+
+.stock-cell.change.negative {
+  color: #ef4444; /* Red for losers */
+}
