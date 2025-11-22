@@ -5,7 +5,7 @@ import StockDetail from './components/StockDetail';
 import { FaSearch } from 'react-icons/fa';
 import './App.css';
 
-// --- NEW: Filter Button Component ---
+// Filter Button Component
 const FilterButton = ({ label, activeFilter, setFilter }) => (
   <button
     className={`filter-button ${activeFilter === label ? 'active' : ''}`}
@@ -15,39 +15,34 @@ const FilterButton = ({ label, activeFilter, setFilter }) => (
   </button>
 );
 
-
 function App() {
   const [stockList, setStockList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSymbol, setSelectedSymbol] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // --- NEW: State for the active filter ---
   const [activeFilter, setActiveFilter] = useState('Market Cap');
 
-  // --- MODIFIED: useEffect now calls our new, powerful endpoint ---
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
+        // USE RELATIVE PATH FOR PRODUCTION
+        // This automatically works on both Localhost (with proxy) and Render
         const response = await axios.get('/api/nifty500-market-data');
         
-        // --- SAFETY CHECK ---
-        // Check if the response is actually an array (list of stocks)
+        // --- CRITICAL SAFETY CHECK ---
+        // If the server returns an error object instead of a list, don't crash.
         if (Array.isArray(response.data)) {
           setStockList(response.data);
           setError(null);
         } else {
-          // If it's not an array, it's likely an error object from the backend
-          console.error("Server returned non-array data:", response.data);
-          setError(response.data.error || 'Received invalid data format from server');
+          console.error("Invalid Data:", response.data);
+          setError("Server returned invalid data. Check API Keys.");
         }
-        
+
       } catch (err) {
-        console.error("API Error:", err);
-        // Extract the specific error message from the backend if it exists
-        const msg = err.response?.data?.error || 'Failed to fetch market data. Please check console.';
-        setError(msg);
+        console.error("Fetch Error:", err);
+        setError('Failed to connect to server. Please wait a moment and refresh.');
       } finally {
         setIsLoading(false);
       }
@@ -55,11 +50,12 @@ function App() {
     fetchMarketData();
   }, []);
 
-  // --- NEW: Advanced Filtering and Sorting Logic using useMemo for performance ---
   const filteredAndSortedStocks = useMemo(() => {
+    // Safety check: Ensure stockList is actually an array before filtering
+    if (!Array.isArray(stockList)) return [];
+
     let sortedStocks = [...stockList];
 
-    // 1. Apply the active filter/sort
     switch (activeFilter) {
       case 'Top Gainers':
         sortedStocks.sort((a, b) => b.percentChange - a.percentChange);
@@ -72,25 +68,25 @@ function App() {
         break;
       case 'Market Cap':
       default:
-        sortedStocks.sort((a, b) => b.marketCap - a.marketCap);
+        // Handle potential missing marketCap values safely
+        sortedStocks.sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0));
         break;
     }
     
-    // 2. Apply the search term on top of the sorted list
-    if (!searchTerm) {
-      return sortedStocks;
-    }
+    if (!searchTerm) return sortedStocks;
+    
     return sortedStocks.filter(stock =>
-      stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      stock.name.toLowerCase().includes(searchTerm.toLowerCase())
+      (stock.symbol || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (stock.name || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [stockList, activeFilter, searchTerm]); // Recalculate only when these change
-
+  }, [stockList, activeFilter, searchTerm]);
 
   const handleStockClick = (symbol) => setSelectedSymbol(symbol);
   const handleCloseDetail = () => setSelectedSymbol(null);
 
-  if (isLoading) return <div className="loading-container"><h1>Loading Stock Data...</h1></div>;
+  if (isLoading) return <div className="loading-container"><h1>Loading Market Data...</h1></div>;
+  
+  // Display the error on screen if one exists
   if (error) return <div className="error-container"><h1>Error: {error}</h1></div>;
 
   return (
@@ -111,7 +107,6 @@ function App() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          {/* --- NEW: Filter buttons UI --- */}
           <div className="filter-buttons">
             <FilterButton label="Market Cap" activeFilter={activeFilter} setFilter={setActiveFilter} />
             <FilterButton label="Top Gainers" activeFilter={activeFilter} setFilter={setActiveFilter} />
@@ -121,7 +116,6 @@ function App() {
         </div>
 
         <div className="stock-table">
-          {/* --- MODIFIED: Table header now includes our new data points --- */}
           <div className="stock-table-header">
             <div className="stock-cell name">Company Name</div>
             <div className="stock-cell">Price</div>
@@ -129,7 +123,6 @@ function App() {
             <div className="stock-cell">Market Cap</div>
           </div>
           
-          {/* --- MODIFIED: We now map over the fully processed list --- */}
           {filteredAndSortedStocks.map(stock => (
             <motion.div 
               key={stock.symbol} 
@@ -143,12 +136,13 @@ function App() {
                 <span className="symbol">{stock.symbol}</span>
                 {stock.name}
               </div>
-              <div className="stock-cell price">₹{stock.price.toLocaleString('en-IN')}</div>
-              {/* --- NEW: Dynamically color the change based on positive/negative value --- */}
+              <div className="stock-cell price">₹{stock.price?.toLocaleString('en-IN')}</div>
               <div className={`stock-cell change ${stock.change >= 0 ? 'positive' : 'negative'}`}>
-                {stock.change >= 0 ? '+' : ''}{stock.change.toLocaleString('en-IN')} ({stock.percentChange}%)
+                {stock.change >= 0 ? '+' : ''}{stock.change?.toLocaleString('en-IN')} ({stock.percentChange}%)
               </div>
-              <div className="stock-cell market-cap">₹{(stock.marketCap / 10000000).toLocaleString('en-IN')} Cr</div>
+              <div className="stock-cell market-cap">
+                {stock.marketCap ? `₹${(stock.marketCap / 10000000).toLocaleString('en-IN', {maximumFractionDigits: 0})} Cr` : 'N/A'}
+              </div>
             </motion.div>
           ))}
           
