@@ -30,13 +30,24 @@ function App() {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        // We now call the new endpoint to get rich data from the start
         const response = await axios.get('/api/nifty500-market-data');
-        setStockList(response.data);
-        setError(null);
+        
+        // --- SAFETY CHECK ---
+        // Check if the response is actually an array (list of stocks)
+        if (Array.isArray(response.data)) {
+          setStockList(response.data);
+          setError(null);
+        } else {
+          // If it's not an array, it's likely an error object from the backend
+          console.error("Server returned non-array data:", response.data);
+          setError(response.data.error || 'Received invalid data format from server');
+        }
+        
       } catch (err) {
-        setError('Failed to fetch market data. Is the backend server running?');
-        console.error(err);
+        console.error("API Error:", err);
+        // Extract the specific error message from the backend if it exists
+        const msg = err.response?.data?.error || 'Failed to fetch market data. Please check console.';
+        setError(msg);
       } finally {
         setIsLoading(false);
       }
