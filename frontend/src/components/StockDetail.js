@@ -42,9 +42,9 @@ const StockDetail = ({ symbol, onClose }) => {
       try {
         // Use Promise.all to fetch all three endpoints simultaneously for maximum speed
         const [detailsResponse, summaryResponse, chartResponse] = await Promise.all([
-  axios.get(`http://127.0.0.1:5001/api/stock-data/${symbol}`),
-  axios.get(`http://127.0.0.1:5001/api/stock-summary/${symbol}`),
-  axios.get(`http://127.0.0.1:5001/api/stock-chart/${symbol}`)
+  axios.get(`/api/stock-data/${symbol}`),
+  axios.get(`/api/stock-summary/${symbol}`),
+  axios.get(`/api/stock-chart/${symbol}`)
 
         ]);
 

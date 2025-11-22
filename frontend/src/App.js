@@ -31,7 +31,7 @@ function App() {
     const fetchMarketData = async () => {
       try {
         // We now call the new endpoint to get rich data from the start
-        const response = await axios.get('http://127.0.0.1:5001/api/nifty500-market-data');
+        const response = await axios.get('/api/nifty500-market-data');
         setStockList(response.data);
         setError(null);
       } catch (err) {
