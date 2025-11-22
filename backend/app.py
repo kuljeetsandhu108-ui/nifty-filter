@@ -15,7 +15,10 @@ import google.generativeai as genai
 # Get the folder where this app.py file is located (the 'backend' folder)
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 # Calculate path to ../frontend/build
-FRONTEND_BUILD_DIR = os.path.join(BACKEND_DIR, '..', 'frontend', 'build')
+# Get the current directory (root)
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Build path is simply frontend/build
+FRONTEND_BUILD_DIR = os.path.join(CURRENT_DIR, 'frontend', 'build')
 
 # Initialize Flask
 app = Flask(__name__, static_folder=FRONTEND_BUILD_DIR, static_url_path='')
