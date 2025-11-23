@@ -1,6 +1,6 @@
 # ==============================================================================
 # NIFTY 500 STOCK SCREENER - BACKEND (app.py)
-# Final Production Version - ROOT DIRECTORY CONFIGURATION
+# Final Production Version - Robust Static Serving
 # ==============================================================================
 
 import os
@@ -11,17 +11,17 @@ import requests
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# --- 1. PATH CONFIGURATION (ROOT LEVEL) ---
-# Since app.py is in the root, the frontend build is just inside 'frontend/build'
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_BUILD_DIR = os.path.join(CURRENT_DIR, 'frontend', 'build')
+# --- ROBUST PATH CONFIGURATION ---
+# 1. Define the folder for static assets (JS, CSS, Images)
+#    This maps the URL '/static' to the folder 'frontend/build/static'
+app = Flask(__name__, 
+            static_folder='frontend/build/static', 
+            static_url_path='/static')
 
-# Initialize Flask
-app = Flask(__name__, static_folder=FRONTEND_BUILD_DIR, static_url_path='')
+# 2. Define the base folder for the frontend build (where index.html lives)
+FRONTEND_BUILD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'build')
 
-# --- 2. DATA & CONFIGURATION ---
-
-# Hardcoded List of Nifty 500 Stocks
+# --- (Your NIFTY_500_SYMBOLS list remains the same - keep it here) ---
 NIFTY_500_SYMBOLS = [
     '360ONE', '3MINDIA', 'ABB', 'ACC', 'AARTIIND', 'AAVAS', 'ABBOTINDIA', 'ABCAPITAL', 'ABFRL', 'ADANIENT',
     'ADANIGREEN', 'ADANIPORTS', 'ADANIPOWER', 'ATGL', 'AWL', 'ABSLAMC', 'AEGISCHEM', 'AETHER',
@@ -67,63 +67,49 @@ NIFTY_500_SYMBOLS = [
 ]
 
 load_dotenv()
-# Cache for 10 minutes
 config = {"CACHE_TYPE": "SimpleCache", "CACHE_DEFAULT_TIMEOUT": 600}
 app.config.from_mapping(config)
 cache = Cache(app)
 CORS(app)
-
-# --- API Keys ---
 FMP_API_KEY = os.getenv("FMP_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 FMP_BASE_URL = "https://financialmodelingprep.com/api/v3"
-
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 @app.errorhandler(500)
 def internal_error(error): return (jsonify({"error": "Internal Server Error", "message": str(error)}), 500)
 
-# --- 3. API ROUTES ---
-
+# --- API ROUTES (Unchanged) ---
+# (Keep your existing API routes for market data, stock data, charts, and summary here)
+# ... [Copy your API routes here] ...
 @app.route("/api/nifty500-market-data", methods=['GET'])
 @cache.cached(timeout=600)
 def get_nifty500_market_data():
     if not FMP_API_KEY:
         return jsonify({"error": "FMP_API_KEY is not configured."}), 500
-    
-    print(f"Fetching bulk data for {len(NIFTY_500_SYMBOLS)} symbols.")
     fmp_symbols_string = ",".join([f"{symbol}.NS" for symbol in NIFTY_500_SYMBOLS])
     url = f"{FMP_BASE_URL}/quote/{fmp_symbols_string}?apikey={FMP_API_KEY}"
-    
     try:
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         bulk_data = response.json()
-        
         if not bulk_data:
             return jsonify({"error": "FMP bulk quote endpoint returned no data."}), 404
-            
         processed_data = []
         for stock_data in bulk_data:
             price = stock_data.get("price", 0)
             prev_close = stock_data.get("previousClose", 0)
             change = price - prev_close
             percent_change = (change / prev_close * 100) if prev_close != 0 else 0
-            
             processed_data.append({
-                "symbol": stock_data.get("symbol", "").replace(".NS", ""),
-                "name": stock_data.get("name"),
-                "price": price,
-                "change": round(change, 2),
-                "percentChange": round(percent_change, 2),
-                "volume": stock_data.get("volume"),
-                "marketCap": stock_data.get("marketCap"),
+                "symbol": stock_data.get("symbol", "").replace(".NS", ""), "name": stock_data.get("name"),
+                "price": price, "change": round(change, 2), "percentChange": round(percent_change, 2),
+                "volume": stock_data.get("volume"), "marketCap": stock_data.get("marketCap"),
             })
-        print("Successfully processed bulk market data.")
         return jsonify(processed_data)
     except Exception as e:
-        return jsonify({"error": f"An unexpected error occurred: {e}"}), 500
+        return jsonify({"error": f"An unexpected error occurred during FMP bulk fetch: {e}"}), 500
 
 @app.route("/api/stock-data/<symbol>", methods=['GET'])
 @cache.cached(timeout=300)
@@ -135,17 +121,13 @@ def get_stock_data(symbol):
         response.raise_for_status()
         info = response.json()[0]
         return jsonify({
-            "symbol": info.get("symbol", "").replace(".NS", ""),
-            "longName": info.get("name"),
-            "currentPrice": info.get("price"),
-            "previousClose": info.get("previousClose"),
-            "dayHigh": info.get("dayHigh"),
-            "dayLow": info.get("dayLow"),
-            "volume": info.get("volume"),
-            "marketCap": info.get("marketCap"),
+            "symbol": info.get("symbol", "").replace(".NS", ""), "longName": info.get("name"),
+            "currentPrice": info.get("price"), "previousClose": info.get("previousClose"),
+            "dayHigh": info.get("dayHigh"), "dayLow": info.get("dayLow"),
+            "volume": info.get("volume"), "marketCap": info.get("marketCap"),
         })
     except Exception as e:
-        return jsonify({"error": f"FMP API request failed: {e}"}), 502
+        return jsonify({"error": f"FMP API request for detailed data failed: {e}"}), 502
 
 @app.route("/api/stock-chart/<symbol>", methods=['GET'])
 @cache.cached(timeout=3600)
@@ -162,14 +144,13 @@ def get_stock_chart_data(symbol):
         ]
         return jsonify(chart_ready_data)
     except Exception as e:
-        return jsonify({"error": f"FMP API request failed: {e}"}), 502
+        return jsonify({"error": f"FMP API request for chart data failed: {e}"}), 502
 
 @app.route("/api/stock-summary/<symbol>", methods=['GET'])
 @cache.cached(timeout=86400)
 def get_stock_summary(symbol):
     if not GEMINI_API_KEY:
         return jsonify({"error": "GEMINI_API_KEY is not configured."}), 500
-    
     fmp_symbol = f"{symbol.upper()}.NS"
     url = f"{FMP_BASE_URL}/profile/{fmp_symbol}?apikey={FMP_API_KEY}"
     try:
@@ -192,14 +173,20 @@ def get_stock_summary(symbol):
     except Exception as e:
         return jsonify({"error": f"An error occurred during AI summary generation: {e}"}), 500
 
-# --- 4. PRODUCTION SERVING LOGIC ---
-@app.route('/', defaults={'path': ''})
+# --- 4. DEFINITIVE SERVING LOGIC ---
+
+@app.route('/')
+def index():
+    # Serve the main index.html entry point
+    return send_from_directory(FRONTEND_BUILD_DIR, 'index.html')
+
 @app.route('/<path:path>')
-def serve(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
+def serve_static_files(path):
+    # Check if the file exists in the build folder (like manifest.json, favicon.ico)
+    if os.path.exists(os.path.join(FRONTEND_BUILD_DIR, path)):
+        return send_from_directory(FRONTEND_BUILD_DIR, path)
+    # Otherwise, fall back to index.html (for React routing)
+    return send_from_directory(FRONTEND_BUILD_DIR, 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
